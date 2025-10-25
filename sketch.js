@@ -7,6 +7,14 @@ let colorPalettes = {};
 let currentPalette = 0;
 let noiseTexture;
 
+let loading = false;
+
+let model3D;
+
+function preload() {
+  model3D = loadModel('https://matt-wong.github.io/project/assets/Elf-Ghost-P.stl');
+}
+
 function setup() {
     let canvas = createCanvas(1200, 600, WEBGL);
     canvas.parent('canvas-container');
@@ -28,6 +36,13 @@ function setup() {
 
     // Load color palettes from COLOURlovers API
     loadColorPalettes();
+}
+
+async function regenScene() {
+    this.loading = true;
+    await loadColorPalettes();
+    await generateShapes();
+    this.loading = false;
 }
 
 async function loadColorPalettes() {
@@ -61,7 +76,7 @@ async function loadColorPalettes() {
     }
 }
 
-function generateShapes() {
+async function generateShapes() {
     shapes = [];
     if (!colorPalettes) {
         return;
@@ -84,6 +99,10 @@ function generateShapes() {
 }
 
 function draw() {
+    if (this.loading){
+        background(0, 0, 255);
+        return;
+    }
     background(128, 128, 128);
 
     // Add some ambient lighting
@@ -125,6 +144,9 @@ function draw() {
         }
         pop();
     }
+
+    myMesh = new p5.Geometry(20, 20, p5.Geometry.TORUS, 100, 40);
+    model(myMesh);
 }
 
 function mouseMoved() {
@@ -133,21 +155,19 @@ function mouseMoved() {
     const distanceFromCenterline = mouseX - centerline;
     //if create deadzone for rotation speed
     if (distanceFromCenterline > 25 || distanceFromCenterline < -25) {
-        rotationSpeed = -0.000001 * distanceFromCenterline;
+        rotationSpeed = -0.00001 * distanceFromCenterline;
     } else {
         rotationSpeed = 0;
     }
 }
 
-function keyPressed() {
+async function keyPressed() {
     if (key === ' ') {
-        // Spacebar to fetch new palette and regenerate shapes
-        loadColorPalettes();
-        regenerateShapes();
+      await regenScene();
     }
-}
+  }
 
-function regenerateShapes() {
+async function regenerateShapes() {
     shapes = [];
-    generateShapes();
+    await generateShapes();
 }
