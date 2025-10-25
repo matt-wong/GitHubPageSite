@@ -12,7 +12,7 @@ let loading = false;
 let model3D;
 
 function preload() {
-  model3D = loadModel('https://matt-wong.github.io/project/assets/Elf-Ghost-P.stl');
+  model3D = loadModel('assets/Elf-Ghost-P.stl', true);
 }
 
 function setup() {
