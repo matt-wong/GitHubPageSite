@@ -48,6 +48,7 @@ function setup() {
 
     // Load color palettes from COLOURlovers API
     loadColorPalettes();
+    regenScene();
 }
 
 function loadTextures() {
@@ -193,7 +194,7 @@ function draw() {
             if (shape.type === 'box') {
                 box(shape.size, shape.size * 1.5, shape.size);
             } else if (shape.type === 'sphere') {
-                sphere(shape.size);
+                ellipsoid(shape.size, shape.size * 1.5, shape.size * 1.5);
             } else if (shape.type === 'cone') {
                 cone(shape.size, shape.size);
             }
