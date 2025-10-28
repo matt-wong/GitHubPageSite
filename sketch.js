@@ -9,9 +9,9 @@ let floorColor = [];
 
 // Shape probability constants
 const SHAPE_PROBABILITIES = {
-    box: 0.5,    // 50% chance for boxes
-    sphere: 0.3, // 30% chance for spheres
-    cone: 0.2    // 20% chance for cones
+    box: 0.7,    // 50% chance for boxes
+    sphere: 0.2, // 30% chance for spheres
+    cone: 0.1    // 20% chance for cones
 };
 
 let loading = false;
@@ -22,20 +22,20 @@ let model3D;
 function selectShapeType() {
     const rand = random();
     let cumulative = 0;
-    
+
     for (const [shapeType, probability] of Object.entries(SHAPE_PROBABILITIES)) {
         cumulative += probability;
         if (rand <= cumulative) {
             return shapeType;
         }
     }
-    
+
     // Fallback to box if something goes wrong
     return 'box';
 }
 
 function preload() {
-  // model3D = loadModel('assets/Elf-Ghost-P.stl', true);
+    // model3D = loadModel('assets/Elf-Ghost-P.stl', true);
 }
 
 function setup() {
@@ -43,9 +43,14 @@ function setup() {
     canvas.parent('canvas-container');
     // Create a p5.Camera object.
     cam = createCamera();
+    loadTextures();
+    camera(0, -80, 400);
 
-    camera(0,-80, 400);
+    // Load color palettes from COLOURlovers API
+    loadColorPalettes();
+}
 
+function loadTextures() {
     // Create noise texture
     noiseTexture = createGraphics(256, 256);
     noiseTexture.loadPixels();
@@ -60,9 +65,6 @@ function setup() {
         }
     }
     noiseTexture.updatePixels();
-
-    // Load color palettes from COLOURlovers API
-    loadColorPalettes();
 }
 
 async function regenScene() {
@@ -100,28 +102,6 @@ async function loadColorPalettes() {
     }
 }
 
-async function generateShapes() {
-    shapes = [];
-    if (!colorPalettes) {
-        return;
-    }
-    const numberOfShapes = random(10, 20);
-    for (let i = 0; i < numberOfShapes; i++) {
-
-        const randomColors = colorPalettes?.[floor(random(colorPalettes.length))];
-
-        shapes.push({
-            x: random(-200, 200),
-            y: random(-200, 200),
-            z: random(-200, 200),
-            size: random(20, 80),
-            color: randomColors[floor(random(randomColors.length))],
-            type: selectShapeType(),
-            hasTexture: random() < 0.5
-        });
-    }
-}
-
 async function generateTowers() {
 
     const tallRatio = 0.1;
@@ -130,11 +110,11 @@ async function generateTowers() {
     if (!colorPalettes) {
         return;
     }
-    const numberOfTowers = random(1, 70);
+    const numberOfTowers = random(25, 45);
     for (let i = 0; i < numberOfTowers; i++) {
         let shapes = [];
         let numberOfShapes = random(1, 4);
-        if (random(0,1) < tallRatio){
+        if (random(0, 1) < tallRatio) {
             numberOfShapes = random(20, 40);
         }
 
@@ -163,7 +143,7 @@ async function generateTowers() {
 }
 
 function draw() {
-    if (this.loading){
+    if (this.loading) {
         background(0, 0, 255);
         return;
     }
@@ -174,7 +154,7 @@ function draw() {
 
     // Add directional lighting
     directionalLight(255, 255, 255, -1, 0.5, -1);
-    
+
     // Add point light for better illumination
     pointLight(255, 255, 255, 0, -100, 200);
 
@@ -186,7 +166,7 @@ function draw() {
     // Floor + Ground
     push();
     translate(0, 0, 0);
-    
+
     noStroke();
 
     box(600, 1, 600);
@@ -196,18 +176,22 @@ function draw() {
 
     // Draw all shapes
     for (let tower of towers) {
-        for (let shape of tower.shapes){
+        for (let shape of tower.shapes) {
             push();
             translate(shape.x + tower.x, shape.y + tower.y, shape.z + tower.z);
-    
+
             fill(shape.color[0], shape.color[1], shape.color[2]);
             noStroke();
             // Use ambient material for solid appearance
             ambientMaterial(shape.color[0], shape.color[1], shape.color[2]);
-            // }
-    
+
+            if (shape.hasTexture) {
+                // If the shape is marked to have a texture, apply the noise texture for varied appearance
+                texture(noiseTexture);
+            }
+
             if (shape.type === 'box') {
-                box(shape.size, shape.size, shape.size);
+                box(shape.size, shape.size * 1.5, shape.size);
             } else if (shape.type === 'sphere') {
                 sphere(shape.size);
             } else if (shape.type === 'cone') {
@@ -218,7 +202,7 @@ function draw() {
     }
 }
 
-function buildPilars(){
+function buildPilars() {
     push();
     translate(50, 0, 50);
     fill(13, 12, 12);
@@ -267,9 +251,9 @@ function mouseMoved() {
 
 async function keyPressed() {
     if (key === ' ') {
-      await regenScene();
+        await regenScene();
     }
-  }
+}
 
 async function regenerateShapes() {
     shapes = [];
