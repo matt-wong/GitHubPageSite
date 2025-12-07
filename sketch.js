@@ -9,9 +9,9 @@ let floorColor = [];
 
 // Shape probability constants
 const SHAPE_PROBABILITIES = {
-    box: 0.7,    // 50% chance for boxes
-    sphere: 0.2, // 30% chance for spheres
-    cone: 0.1    // 20% chance for cones
+    box: 0.85,    
+    sphere: 0.10,
+    cone: 0.05 
 };
 
 let loading = false;
@@ -47,7 +47,7 @@ function setup() {
     camera(0, -80, 400);
 
     // Load color palettes from COLOURlovers API
-    loadColorPalettes();
+    // loadColorPalettes();
     regenScene();
 }
 
@@ -80,7 +80,7 @@ async function loadColorPalettes() {
     try {
         // Use CORS proxy to avoid CORS issues
         const proxyUrl = 'https://api.allorigins.win/raw?url=';
-        const targetUrl = `https://www.colourlovers.com/api/palettes/random?format=json&numResults=5&timestamp=${Date.now()}`;
+        const targetUrl = `https://www.colourlovers.com/api/palettes/random?format=json&numResults=5`;
         const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
         const palettes = await response.json();
 
@@ -111,12 +111,12 @@ async function generateTowers() {
     if (!colorPalettes) {
         return;
     }
-    const numberOfTowers = random(25, 45);
+    const numberOfTowers = 5;// random(15, 20);
     for (let i = 0; i < numberOfTowers; i++) {
         let shapes = [];
-        let numberOfShapes = random(1, 4);
+        let numberOfShapes = random(10, 14);
         if (random(0, 1) < tallRatio) {
-            numberOfShapes = random(20, 40);
+            numberOfShapes = random(20, 25);
         }
 
         for (let j = 0; j < numberOfShapes; j++) {
@@ -128,15 +128,18 @@ async function generateTowers() {
                 y: random(-20, -160),
                 z: random(-5, 5),
                 size: random(20, 80),
-                color: randomColors[floor(random(randomColors.length))],
+                color: randomColors[i],
                 type: selectShapeType(),
-                hasTexture: random() < 0.5
+                hasTexture: random() < 0.5,
+                rotationX: random(0, PI/4),
+                rotationY: random(0, TWO_PI),
+                rotationZ: random(0, PI/4)
             });
         }
         towers.push({
             shapes: shapes, x: random(-200, 200),
             y: random(0, -10),
-            z: random(-200, 200),
+            z: random(-200, 200)
         })
 
         console.log(towers);
@@ -180,15 +183,20 @@ function draw() {
         for (let shape of tower.shapes) {
             push();
             translate(shape.x + tower.x, shape.y + tower.y, shape.z + tower.z);
+            
+            // Apply rotation to the shape
+            rotateX(shape.rotationX);
+            rotateY(shape.rotationY);
+            rotateZ(shape.rotationZ);
 
             fill(shape.color[0], shape.color[1], shape.color[2]);
             noStroke();
             // Use ambient material for solid appearance
             ambientMaterial(shape.color[0], shape.color[1], shape.color[2]);
 
-            if (shape.hasTexture) {
+            if (shape.hasTexture && noiseTexture) {
                 // If the shape is marked to have a texture, apply the noise texture for varied appearance
-                texture(noiseTexture);
+                // texture(noiseTexture);
             }
 
             if (shape.type === 'box') {
