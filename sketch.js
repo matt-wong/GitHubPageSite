@@ -5,7 +5,7 @@ let towers = [];
 let colorPalettes = {};
 let currentPalette = 0;
 let noiseTexture;
-let floorColor = [];
+let floorBlocks = [];
 
 // Shape probability constants
 const SHAPE_PROBABILITIES = {
@@ -73,6 +73,7 @@ async function regenScene() {
     await loadColorPalettes();
 
     await generateTowers();
+    await generateFloor();
     this.loading = false;
 }
 
@@ -103,6 +104,19 @@ async function loadColorPalettes() {
     }
 }
 
+async function generateFloor() {
+    const numberOfBlocks = 500;
+    for (let i = 0; i < numberOfBlocks; i++) {
+        floorBlocks.push({
+            x: random(-400, 400),
+            height: random(1, 50),
+            width: random(1, 100),
+            depth: random(1, 100),
+            z: random(-400, 400)
+        });
+    }
+}
+
 async function generateTowers() {
 
     const tallRatio = 0.1;
@@ -111,10 +125,10 @@ async function generateTowers() {
     if (!colorPalettes) {
         return;
     }
-    const numberOfTowers = 5;// random(15, 20);
+    const numberOfTowers = 10;// random(15, 20);
     for (let i = 0; i < numberOfTowers; i++) {
         let shapes = [];
-        let numberOfShapes = random(10, 14);
+        let numberOfShapes = random(5, 10);
         if (random(0, 1) < tallRatio) {
             numberOfShapes = random(20, 25);
         }
@@ -131,9 +145,9 @@ async function generateTowers() {
                 color: randomColors[i],
                 type: selectShapeType(),
                 hasTexture: random() < 0.5,
-                rotationX: random(0, PI/4),
+                rotationX: random(0, PI/8),
                 rotationY: random(0, TWO_PI),
-                rotationZ: random(0, PI/4)
+                rotationZ: random(0, PI/8)
             });
         }
         towers.push({
@@ -177,6 +191,7 @@ function draw() {
     pop();
 
     buildPilars();
+    buildFloor();
 
     // Draw all shapes
     for (let tower of towers) {
@@ -189,10 +204,18 @@ function draw() {
             rotateY(shape.rotationY);
             rotateZ(shape.rotationZ);
 
-            fill(shape.color[0], shape.color[1], shape.color[2]);
+            if (shape.color) {
+                fill(shape.color[0], shape.color[1], shape.color[2]);
+            } else {
+                fill(113, 112, 112);
+            }
             noStroke();
             // Use ambient material for solid appearance
-            ambientMaterial(shape.color[0], shape.color[1], shape.color[2]);
+            if (shape.color) {
+                ambientMaterial(shape.color[0], shape.color[1], shape.color[2]);
+            } else {
+                ambientMaterial(113, 112, 112);
+            }
 
             if (shape.hasTexture && noiseTexture) {
                 // If the shape is marked to have a texture, apply the noise texture for varied appearance
@@ -208,6 +231,18 @@ function draw() {
             }
             pop();
         }
+    }
+}
+
+function buildFloor() {
+    for (let block of floorBlocks) {
+        push();
+        translate(block.x, 0, block.z);
+        fill(113, 112, 112);
+        noStroke();
+        ambientMaterial(13, 12, 12);
+        box(block.width, block.height, block.depth);
+        pop();
     }
 }
 
