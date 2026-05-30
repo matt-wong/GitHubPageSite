@@ -253,7 +253,8 @@ async function generateFloor() {
             height: random(1, 50),
             width: random(1, 100),
             depth: random(1, 100),
-            z: random(-400, 400)
+            z: random(-400, 400),
+            color: colorPalettes[floor(random(colorPalettes.length))]
         });
     }
 }
@@ -414,7 +415,7 @@ function buildFloor() {
     for (let block of floorBlocks) {
         push();
         translate(block.x, 0, block.z);
-        fill(113, 112, 112);
+        fill(block.color[0], block.color[1], block.color[2]);
         noStroke();
         ambientMaterial(13, 12, 12);
         box(block.width, block.height, block.depth);
