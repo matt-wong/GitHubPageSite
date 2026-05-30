@@ -1,0 +1,78 @@
+/* Sub-page prose content */
+.page-content {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.page-content .page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.page-content .page-subtitle {
+  color: var(--bs-secondary-color);
+  font-size: 1.05rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.page-content .prose {
+  color: var(--bs-body-color);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.page-content .prose p {
+  margin-bottom: 1.35rem;
+  text-align: justify;
+  hyphens: auto;
+}
+
+.page-content .prose p:first-of-type {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: var(--bs-emphasis-color);
+}
+
+.page-content .prose p:last-child {
+  margin-bottom: 0;
+}
+
+.page-content .prose .drop-cap::first-letter {
+  float: left;
+  font-size: 3.25rem;
+  line-height: 1;
+  font-weight: 700;
+  margin: 0.05em 0.12em 0 0;
+  color: var(--bs-primary);
+}
+
+.page-content .prose blockquote {
+  margin: 2rem 0;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--bs-primary);
+  background: var(--bs-tertiary-bg);
+  border-radius: 0 0.375rem 0.375rem 0;
+  font-style: italic;
+  color: var(--bs-secondary-color);
+}
+
+.page-content .prose blockquote p {
+  margin-bottom: 0;
+  text-align: left;
+}
+
+/* Generative art page: canvas + prose layout */
+.art-page-section {
+  padding: 2rem 0 1rem;
+}
+
+.art-page-section .canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
