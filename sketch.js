@@ -8,6 +8,28 @@ let colorPalettes = [
 let currentPalette = 0;
 let noiseTexture;
 let floorBlocks = [];
+let model3D;
+let ghosts = [];
+let housePlantModel;
+let plants = [];
+
+const GHOST_COUNT = 3;
+const GHOST_MODEL_PATH = 'assets/Elf-Ghost-P.stl';
+const GHOST_ANCHORS = [
+    { x: -160, z: 80 },
+    { x: 160, z: -80 },
+    { x: 0, z: -160 },
+];
+
+const PLANT_COUNT = 6;
+const PLANT_MODEL_PATH = 'assets/eb_house_plant_01.obj';
+const PLANT_COLORS = [
+    [34, 120, 45],
+    [46, 125, 50],
+    [56, 142, 60],
+    [72, 160, 72],
+    [40, 100, 55],
+];
 
 // Shape probability constants
 const SHAPE_PROBABILITIES = {
@@ -56,7 +78,8 @@ function selectShapeType() {
 }
 
 function preload() {
-    // model3D = loadModel('assets/Elf-Ghost-P.stl', true);
+    model3D = loadModel(GHOST_MODEL_PATH, true);
+    housePlantModel = loadModel(PLANT_MODEL_PATH, true);
 }
 
 function setup() {
@@ -66,6 +89,12 @@ function setup() {
     // Create a p5.Camera object.
     cam = createCamera();
     loadTextures();
+    if (model3D && typeof model3D.computeNormals === 'function') {
+        model3D.computeNormals();
+    }
+    if (housePlantModel && typeof housePlantModel.computeNormals === 'function') {
+        housePlantModel.computeNormals();
+    }
     camera(0, -80, 400);
 
     // Load color palettes from COLOURlovers API
@@ -126,6 +155,8 @@ async function regenScene(showOverlay = false) {
     try {
         await generateTowers();
         await generateFloor();
+        generateGhosts();
+        generatePlants();
     } finally {
         if (showOverlay) {
             setCanvasLoading(false);
@@ -166,6 +197,51 @@ async function loadColorPalettes() {
     } catch (error) {
         console.log('Failed to load palettes, using fallback colors:', error);
         colorPalettes = fallbackPalettes;
+    }
+}
+
+function generateGhosts() {
+    ghosts = [];
+    if (!model3D) {
+        return;
+    }
+
+    for (let i = 0; i < GHOST_COUNT; i++) {
+        let color = [200, 50, 150];
+        if (Array.isArray(colorPalettes) && colorPalettes.length > 0) {
+            const palette = colorPalettes[floor(random(colorPalettes.length))];
+            color = palette[floor(random(palette.length))];
+        }
+
+        const anchor = GHOST_ANCHORS[i];
+        ghosts.push({
+            x: anchor.x + random(-25, 25),
+            y: random(-120, -40),
+            z: anchor.z + random(-25, 25),
+            scale: random(0.35, 0.75),
+            rotationX: random(-PI / 6, PI / 6),
+            rotationY: random(0, TWO_PI),
+            rotationZ: random(-PI / 6, PI / 6),
+            color: color,
+        });
+    }
+}
+
+function generatePlants() {
+    plants = [];
+    if (!housePlantModel) {
+        return;
+    }
+
+    for (let i = 0; i < PLANT_COUNT; i++) {
+        plants.push({
+            x: random(-260, 260),
+            y: random(-55, 0),
+            z: random(-260, 260),
+            scale: random(0.4, 0.85),
+            rotationY: random(0, TWO_PI),
+            color: PLANT_COLORS[floor(random(PLANT_COLORS.length))],
+        });
     }
 }
 
@@ -221,7 +297,6 @@ async function generateTowers() {
             z: random(-200, 200)
         })
 
-        console.log(towers);
     }
 }
 
@@ -292,6 +367,46 @@ function draw() {
             }
             pop();
         }
+    }
+
+    drawGhosts();
+    drawPlants();
+}
+
+function drawGhosts() {
+    if (!model3D || ghosts.length === 0) {
+        return;
+    }
+
+    for (const ghost of ghosts) {
+        push();
+        translate(ghost.x, ghost.y, ghost.z);
+        rotateX(ghost.rotationX);
+        rotateY(ghost.rotationY);
+        rotateZ(ghost.rotationZ);
+        scale(ghost.scale);
+        noStroke();
+        emissiveMaterial(ghost.color[0], ghost.color[1], ghost.color[2]);
+        model(model3D);
+        pop();
+    }
+}
+
+function drawPlants() {
+    if (!housePlantModel || plants.length === 0) {
+        return;
+    }
+
+    for (const plant of plants) {
+        push();
+        translate(plant.x, plant.y, plant.z);
+        rotateY(plant.rotationY);
+        rotateX(PI);
+        scale(plant.scale);
+        noStroke();
+        emissiveMaterial(plant.color[0], plant.color[1], plant.color[2]);
+        model(housePlantModel);
+        pop();
     }
 }
 
