@@ -2,7 +2,9 @@ let angle = 0;
 let rotationSpeed = 0.01;
 let cameraRadius = 300;
 let towers = [];
-let colorPalettes = {};
+let colorPalettes = [
+    [[255, 255, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255]],
+];
 let currentPalette = 0;
 let noiseTexture;
 let floorBlocks = [];
@@ -14,9 +16,28 @@ const SHAPE_PROBABILITIES = {
     cone: 0.05 
 };
 
-let loading = false;
+let isRegenerating = false;
 
-let model3D;
+function setCanvasLoading(isLoading) {
+    const overlay = document.getElementById('canvas-loading');
+    if (!overlay) {
+        return;
+    }
+
+    overlay.classList.toggle('is-hidden', !isLoading);
+    overlay.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+}
+
+async function fetchWithTimeout(url, timeoutMs = 4000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(url, { signal: controller.signal });
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
 
 // Helper function to select shape type based on probabilities
 function selectShapeType() {
@@ -39,6 +60,7 @@ function preload() {
 }
 
 function setup() {
+    setCanvasLoading(true);
     let canvas = createCanvas(1200, 600, WEBGL);
     canvas.parent('canvas-container');
     // Create a p5.Camera object.
@@ -48,7 +70,27 @@ function setup() {
 
     // Load color palettes from COLOURlovers API
     // loadColorPalettes();
-    regenScene();
+    loadColorPalettes();
+    regenScene(true).catch((error) => {
+        console.log('Scene generation failed:', error);
+        setCanvasLoading(false);
+    });
+
+    window.addEventListener('keydown', handleSpaceRegen);
+}
+
+function handleSpaceRegen(event) {
+    if (event.code !== 'Space' && event.key !== ' ') {
+        return;
+    }
+
+    const tag = event.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+        return;
+    }
+
+    event.preventDefault();
+    regenScene(false);
 }
 
 function loadTextures() {
@@ -68,39 +110,62 @@ function loadTextures() {
     noiseTexture.updatePixels();
 }
 
-async function regenScene() {
-    this.loading = true;
-    await loadColorPalettes();
+async function regenScene(showOverlay = false) {
+    if (isRegenerating) {
+        return;
+    }
 
-    await generateTowers();
-    await generateFloor();
-    this.loading = false;
+    isRegenerating = true;
+    if (showOverlay) {
+        setCanvasLoading(true);
+    }
+
+    floorBlocks = [];
+    towers = [];
+
+    try {
+        await generateTowers();
+        await generateFloor();
+    } finally {
+        if (showOverlay) {
+            setCanvasLoading(false);
+        }
+        isRegenerating = false;
+    }
+
+    loadColorPalettes();
 }
 
 async function loadColorPalettes() {
-    try {
-        // Use CORS proxy to avoid CORS issues
-        const proxyUrl = 'https://api.allorigins.win/raw?url=';
-        const targetUrl = `https://www.colourlovers.com/api/palettes/random?format=json&numResults=5`;
-        const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
-        const palettes = await response.json();
+    const fallbackPalettes = [
+        [[255, 255, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255]],
+        [[40, 40, 40], [0, 200, 120], [255, 180, 0], [220, 60, 80]],
+    ];
 
-        // Convert hex colors to RGB arrays
-        colorPalettes = palettes.map(palette =>
-            palette.colors.map(hex => {
-                // Convert hex to RGB
+    try {
+        const proxyUrl = 'https://api.allorigins.win/raw?url=';
+        const targetUrl = 'https://www.colourlovers.com/api/palettes/random?format=json&numResults=5';
+        const response = await fetchWithTimeout(proxyUrl + encodeURIComponent(targetUrl));
+        if (!response.ok) {
+            throw new Error(`Palette request failed: ${response.status}`);
+        }
+
+        const palettes = await response.json();
+        if (!Array.isArray(palettes) || palettes.length === 0) {
+            throw new Error('Palette response was empty');
+        }
+
+        colorPalettes = palettes.map((palette) =>
+            palette.colors.map((hex) => {
                 const r = parseInt(hex.substring(0, 2), 16);
                 const g = parseInt(hex.substring(2, 4), 16);
                 const b = parseInt(hex.substring(4, 6), 16);
                 return [r, g, b];
             })
         );
-
-        console.log('colorPalettes', colorPalettes);
     } catch (error) {
         console.log('Failed to load palettes, using fallback colors:', error);
-        // Fallback to default colors
-        colorPalettes = [[[255, 255, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255]]];
+        colorPalettes = fallbackPalettes;
     }
 }
 
@@ -122,7 +187,7 @@ async function generateTowers() {
     const tallRatio = 0.1;
 
     towers = [];
-    if (!colorPalettes) {
+    if (!Array.isArray(colorPalettes) || colorPalettes.length === 0) {
         return;
     }
     const numberOfTowers = 10;// random(15, 20);
@@ -135,14 +200,14 @@ async function generateTowers() {
 
         for (let j = 0; j < numberOfShapes; j++) {
 
-            const randomColors = colorPalettes?.[floor(random(colorPalettes.length))];
+            const palette = colorPalettes[floor(random(colorPalettes.length))];
 
             shapes.push({
                 x: random(-5, 5),
                 y: random(-20, -160),
                 z: random(-5, 5),
                 size: random(20, 80),
-                color: randomColors[i],
+                color: palette[j % palette.length],
                 type: selectShapeType(),
                 hasTexture: random() < 0.5,
                 rotationX: random(0, PI/8),
@@ -161,10 +226,6 @@ async function generateTowers() {
 }
 
 function draw() {
-    if (this.loading) {
-        background(0, 0, 255);
-        return;
-    }
     background(128, 128, 128);
 
     // Add more ambient lighting to prevent hollow appearance
@@ -290,12 +351,6 @@ function mouseMoved() {
         rotationSpeed = -0.0001 * exponentialSpeedCoeff;
     } else {
         rotationSpeed = 0;
-    }
-}
-
-async function keyPressed() {
-    if (key === ' ') {
-        await regenScene();
     }
 }
 
