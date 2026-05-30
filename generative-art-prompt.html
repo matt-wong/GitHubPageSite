@@ -15,7 +15,7 @@
   <!-- P5.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
   <!-- Custom sketch -->
-  <script src="sketch.js"></script>  
+  <script src="sketch.js?v=4"></script>  
   <!-- Favicon (optional) -->
   <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -43,24 +43,14 @@
       </div>
 
       <div class="canvas-wrapper">
-        <div id="canvas-container"></div>
-      </div>
-
-      <main class="page-content pt-0">
-        <div class="prose">
-          <p class="drop-cap">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Vivamus sagittis lacus vel augue laoreet rutrum faucibus dolor auctor. Aenean eu leo quam. Pellentesque ornare sem lacinia quam venenatis vestibulum.</p>
-
-          <p>Donec ullamcorper nulla non metus auctor fringilla. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis. Integer posuere erat a ante venenatis dapibus posuere velit aliquet.</p>
-
-          <blockquote>
-            <p>"Generative art sits at the intersection of code and creativity — each run a unique composition born from simple rules."</p>
-          </blockquote>
-
-          <p>Nullam quis risus eget urna mollis ornare vel eu leo. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Maecenas faucibus mollis interdum. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.</p>
-
-          <p>Curabitur blandit tempus porttitor. Etiam porta sem malesuada magna mollis euismod. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Aenean lacinia bibendum nulla sed consectetur. Donec sed odio dui.</p>
+        <div class="canvas-host">
+          <div id="canvas-container" class="canvas-stage">
+            <div id="canvas-loading" class="canvas-loading" aria-live="polite" aria-busy="true">
+              <span class="canvas-loading__label">Loading<span class="canvas-loading__dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span></span>
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
     </section>
 
   </div>
