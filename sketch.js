@@ -3,7 +3,14 @@ let rotationSpeed = 0.01;
 let cameraRadius = 300;
 let towers = [];
 let colorPalettes = [
-    [[255, 255, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255]],
+    // https://coolors.co/c6c5b9-62929e-4a6d7c-393a10-475657
+    [[198, 197, 185], [98, 146, 158], [74, 109, 124], [57, 58, 16], [71, 86, 87]],
+    // https://coolors.co/palette/606c38-283618-fefae0-dda15e-bc6c25
+    [[96, 108, 56], [40, 54, 24], [254, 250, 224], [221, 161, 94], [188, 108, 37]],
+    // https://coolors.co/palette/cdb4db-ffc8dd-ffafcc-bde0fe-a2d2ff
+    [[205, 180, 219], [255, 200, 221], [255, 175, 204], [189, 224, 254], [162, 210, 255]],
+    // https://coolors.co/palette/001219-005f73-0a9396-94d2bd-e9d8a6-ee9b00-ca6702-bb3e03-ae2012-9b2226
+    [[0, 18, 25], [0, 95, 115], [10, 147, 150], [148, 210, 189], [233, 216, 166], [238, 155, 0], [202, 103, 2], [187, 62, 3], [174, 32, 18], [155, 34, 38]],
 ];
 let currentPalette = 0;
 let noiseTexture;
@@ -12,6 +19,8 @@ let model3D;
 let ghosts = [];
 let housePlantModel;
 let plants = [];
+let buildingModels = [];
+let buildings = [];
 
 const GHOST_COUNT = 3;
 const GHOST_MODEL_PATH = 'assets/Elf-Ghost-P.stl';
@@ -23,13 +32,11 @@ const GHOST_ANCHORS = [
 
 const PLANT_COUNT = 6;
 const PLANT_MODEL_PATH = 'assets/eb_house_plant_01.obj';
-const PLANT_COLORS = [
-    [34, 120, 45],
-    [46, 125, 50],
-    [56, 142, 60],
-    [72, 160, 72],
-    [40, 100, 55],
-];
+
+const BUILDING_COUNT = 6;
+const BUILDING_MODEL_PATHS = Array.from({ length: 10 }, (_, i) =>
+    `assets/Residential Buildings ${String(i + 1).padStart(3, '0')}.obj`
+);
 
 // Shape probability constants
 const SHAPE_PROBABILITIES = {
@@ -50,17 +57,6 @@ function setCanvasLoading(isLoading) {
     overlay.setAttribute('aria-busy', isLoading ? 'true' : 'false');
 }
 
-async function fetchWithTimeout(url, timeoutMs = 4000) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-        return await fetch(url, { signal: controller.signal });
-    } finally {
-        clearTimeout(timeoutId);
-    }
-}
-
 // Helper function to select shape type based on probabilities
 function selectShapeType() {
     const rand = random();
@@ -77,9 +73,28 @@ function selectShapeType() {
     return 'box';
 }
 
+function pickPaletteColor() {
+    const palette = colorPalettes[floor(random(colorPalettes.length))];
+    return palette[floor(random(palette.length))];
+}
+
+function prepareObjModel(model) {
+    if (!model) {
+        return;
+    }
+
+    // OBJ files with usemtl groups (e.g. ground + hotel_glas) bake default
+    // vertex colors when their .mtl files are missing, which overrides fill/material.
+    model.vertexColors = [];
+    if (typeof model.computeNormals === 'function') {
+        model.computeNormals();
+    }
+}
+
 function preload() {
     model3D = loadModel(GHOST_MODEL_PATH, true);
     housePlantModel = loadModel(PLANT_MODEL_PATH, true);
+    buildingModels = BUILDING_MODEL_PATHS.map((path) => loadModel(path, true));
 }
 
 function setup() {
@@ -92,14 +107,12 @@ function setup() {
     if (model3D && typeof model3D.computeNormals === 'function') {
         model3D.computeNormals();
     }
-    if (housePlantModel && typeof housePlantModel.computeNormals === 'function') {
-        housePlantModel.computeNormals();
+    prepareObjModel(housePlantModel);
+    for (const buildingModel of buildingModels) {
+        prepareObjModel(buildingModel);
     }
     camera(0, -80, 400);
 
-    // Load color palettes from COLOURlovers API
-    // loadColorPalettes();
-    loadColorPalettes();
     regenScene(true).catch((error) => {
         console.log('Scene generation failed:', error);
         setCanvasLoading(false);
@@ -157,46 +170,12 @@ async function regenScene(showOverlay = false) {
         await generateFloor();
         generateGhosts();
         generatePlants();
+        generateBuildings();
     } finally {
         if (showOverlay) {
             setCanvasLoading(false);
         }
         isRegenerating = false;
-    }
-
-    loadColorPalettes();
-}
-
-async function loadColorPalettes() {
-    const fallbackPalettes = [
-        [[255, 255, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255]],
-        [[40, 40, 40], [0, 200, 120], [255, 180, 0], [220, 60, 80]],
-    ];
-
-    try {
-        const proxyUrl = 'https://api.allorigins.win/raw?url=';
-        const targetUrl = 'https://www.colourlovers.com/api/palettes/random?format=json&numResults=5';
-        const response = await fetchWithTimeout(proxyUrl + encodeURIComponent(targetUrl));
-        if (!response.ok) {
-            throw new Error(`Palette request failed: ${response.status}`);
-        }
-
-        const palettes = await response.json();
-        if (!Array.isArray(palettes) || palettes.length === 0) {
-            throw new Error('Palette response was empty');
-        }
-
-        colorPalettes = palettes.map((palette) =>
-            palette.colors.map((hex) => {
-                const r = parseInt(hex.substring(0, 2), 16);
-                const g = parseInt(hex.substring(2, 4), 16);
-                const b = parseInt(hex.substring(4, 6), 16);
-                return [r, g, b];
-            })
-        );
-    } catch (error) {
-        console.log('Failed to load palettes, using fallback colors:', error);
-        colorPalettes = fallbackPalettes;
     }
 }
 
@@ -240,7 +219,26 @@ function generatePlants() {
             z: random(-260, 260),
             scale: random(0.4, 0.85),
             rotationY: random(0, TWO_PI),
-            color: PLANT_COLORS[floor(random(PLANT_COLORS.length))],
+            color: pickPaletteColor(),
+        });
+    }
+}
+
+function generateBuildings() {
+    buildings = [];
+    if (!buildingModels.length) {
+        return;
+    }
+
+    for (let i = 0; i < BUILDING_COUNT; i++) {
+        buildings.push({
+            modelIndex: floor(random(buildingModels.length)),
+            x: random(-280, 280),
+            y: random(-55, 0),
+            z: random(-280, 280),
+            scale: random(0.55, 1.1),
+            rotationY: random(0, TWO_PI),
+            color: pickPaletteColor(),
         });
     }
 }
@@ -254,7 +252,7 @@ async function generateFloor() {
             width: random(1, 100),
             depth: random(1, 100),
             z: random(-400, 400),
-            color: colorPalettes[floor(random(colorPalettes.length))]
+            color: pickPaletteColor()
         });
     }
 }
@@ -267,7 +265,7 @@ async function generateTowers() {
     if (!Array.isArray(colorPalettes) || colorPalettes.length === 0) {
         return;
     }
-    const numberOfTowers = 10;// random(15, 20);
+    const numberOfTowers = 4;// random(15, 20);
     for (let i = 0; i < numberOfTowers; i++) {
         let shapes = [];
         let numberOfShapes = random(5, 10);
@@ -370,6 +368,7 @@ function draw() {
         }
     }
 
+    drawBuildings();
     drawGhosts();
     drawPlants();
 }
@@ -393,6 +392,30 @@ function drawGhosts() {
     }
 }
 
+function drawBuildings() {
+    if (!buildingModels.length || buildings.length === 0) {
+        return;
+    }
+
+    for (const building of buildings) {
+        const buildingModel = buildingModels[building.modelIndex];
+        if (!buildingModel) {
+            continue;
+        }
+
+        push();
+        translate(building.x, building.y, building.z);
+        rotateY(building.rotationY);
+        rotateX(PI);
+        scale(building.scale);
+        noStroke();
+        fill(building.color[0], building.color[1], building.color[2]);
+        ambientMaterial(building.color[0], building.color[1], building.color[2]);
+        model(buildingModel);
+        pop();
+    }
+}
+
 function drawPlants() {
     if (!housePlantModel || plants.length === 0) {
         return;
@@ -405,7 +428,7 @@ function drawPlants() {
         rotateX(PI);
         scale(plant.scale);
         noStroke();
-        emissiveMaterial(plant.color[0], plant.color[1], plant.color[2]);
+        fill(plant.color[0], plant.color[1], plant.color[2]);
         model(housePlantModel);
         pop();
     }
