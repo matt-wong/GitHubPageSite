@@ -182,9 +182,9 @@
   max-width: 100%;
 }
 
-/* Generative art page: canvas + prose layout */
+/* Generative art page: canvas layout */
 .art-page-section {
-  padding: 2rem 0 1rem;
+  padding: 1rem 0 2rem;
 }
 
 .art-page-section .canvas-wrapper {
