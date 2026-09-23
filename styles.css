@@ -1,3 +1,109 @@
+/* Home: blurred, zoomed background with slow diagonal pan */
+.page-home {
+  min-height: 100vh;
+}
+
+.home-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.home-bg__media {
+  position: absolute;
+  inset: -12%;
+  background-image: url("assets/mike-hindle-C6AUqGSAsmg-unsplash.jpg");
+  background-size: cover;
+  background-position: center;
+  filter: blur(14px);
+  transform: scale(1.18);
+  animation: home-bg-drift 90s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.home-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.page-home__content {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes home-bg-drift {
+  from {
+    transform: scale(1.15) translate(0%, 0%);
+  }
+
+  to {
+    transform: scale(1.28) translate(-5%, -4%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-bg__media {
+    animation: none;
+    transform: scale(1.2);
+  }
+}
+
+/* Site header + nav tab colors */
+.site-header {
+  background: #fff;
+  position: relative;
+  z-index: 2;
+}
+
+.container > .site-header {
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-left: calc(50vw - 50% + var(--bs-gutter-x, 1.5rem) * 0.5);
+  padding-right: calc(50vw - 50% + var(--bs-gutter-x, 1.5rem) * 0.5);
+}
+
+.site-header .nav-pills .nav-item:nth-child(1) .nav-link {
+  --nav-tab-color: #264653;
+}
+
+.site-header .nav-pills .nav-item:nth-child(2) .nav-link {
+  --nav-tab-color: #2a9d8f;
+}
+
+.site-header .nav-pills .nav-item:nth-child(3) .nav-link {
+  --nav-tab-color: #e9c46a;
+}
+
+.site-header .nav-pills .nav-item:nth-child(4) .nav-link {
+  --nav-tab-color: #f4a261;
+}
+
+.site-header .nav-pills .nav-item:nth-child(5) .nav-link {
+  --nav-tab-color: #e76f51;
+}
+
+.site-header .nav-pills .nav-link {
+  color: var(--nav-tab-color);
+  font-weight: 600;
+}
+
+.site-header .nav-pills .nav-link:hover,
+.site-header .nav-pills .nav-link:focus {
+  color: var(--nav-tab-color);
+  background-color: color-mix(in srgb, var(--nav-tab-color) 16%, transparent);
+}
+
+.site-header .nav-pills .nav-link.active {
+  color: var(--nav-tab-color);
+  background-color: color-mix(in srgb, var(--nav-tab-color) 22%, transparent);
+}
+
 /* Sub-page prose content */
 .page-content {
   max-width: 42rem;

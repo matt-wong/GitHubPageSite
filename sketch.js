@@ -3,16 +3,12 @@ let rotationSpeed = 0.01;
 let cameraRadius = 300;
 let towers = [];
 let colorPalettes = [
-    // https://coolors.co/c6c5b9-62929e-4a6d7c-393a10-475657
-    [[198, 197, 185], [98, 146, 158], [74, 109, 124], [57, 58, 16], [71, 86, 87]],
-    // https://coolors.co/palette/606c38-283618-fefae0-dda15e-bc6c25
-    [[96, 108, 56], [40, 54, 24], [254, 250, 224], [221, 161, 94], [188, 108, 37]],
-    // https://coolors.co/palette/cdb4db-ffc8dd-ffafcc-bde0fe-a2d2ff
-    [[205, 180, 219], [255, 200, 221], [255, 175, 204], [189, 224, 254], [162, 210, 255]],
-    // https://coolors.co/palette/001219-005f73-0a9396-94d2bd-e9d8a6-ee9b00-ca6702-bb3e03-ae2012-9b2226
-    [[0, 18, 25], [0, 95, 115], [10, 147, 150], [148, 210, 189], [233, 216, 166], [238, 155, 0], [202, 103, 2], [187, 62, 3], [174, 32, 18], [155, 34, 38]],
+    ['#c6c5b9', '#62929e', '#4a6d7c', '#393a10', '#475657'],
+    ['#606c38', '#283618', '#fefae0', '#dda15e', '#bc6c25'],
+    ['#cdb4db', '#ffc8dd', '#ffafcc', '#bde0fe', '#a2d2ff'],
+    ['#001219', '#005f73', '#0a9396', '#94d2bd', '#e9d8a6', '#ee9b00', '#ca6702', '#bb3e03', '#ae2012', '#9b2226'],
 ];
-let currentPalette = 0;
+let currentPaletteIndex = -1;
 let noiseTexture;
 let floorBlocks = [];
 let model3D;
@@ -24,11 +20,6 @@ let buildings = [];
 
 const GHOST_COUNT = 3;
 const GHOST_MODEL_PATH = 'assets/Elf-Ghost-P.stl';
-const GHOST_ANCHORS = [
-    { x: -160, z: 80 },
-    { x: 160, z: -80 },
-    { x: 0, z: -160 },
-];
 
 const PLANT_COUNT = 6;
 const PLANT_MODEL_PATH = 'assets/eb_house_plant_01.obj';
@@ -37,6 +28,8 @@ const BUILDING_COUNT = 6;
 const BUILDING_MODEL_PATHS = Array.from({ length: 10 }, (_, i) =>
     `assets/Residential Buildings ${String(i + 1).padStart(3, '0')}.obj`
 );
+
+const ORBIT_ZOOM_SENSITIVITY = 0.25;
 
 // Shape probability constants
 const SHAPE_PROBABILITIES = {
@@ -74,7 +67,10 @@ function selectShapeType() {
 }
 
 function pickPaletteColor() {
-    const palette = colorPalettes[floor(random(colorPalettes.length))];
+    if (currentPaletteIndex === -1) {
+        currentPaletteIndex = floor(random(colorPalettes.length));
+    }   
+    const palette = colorPalettes[currentPaletteIndex];
     return palette[floor(random(palette.length))];
 }
 
@@ -153,6 +149,7 @@ function loadTextures() {
 }
 
 async function regenScene(showOverlay = false) {
+    currentPaletteIndex = -1;
     if (isRegenerating) {
         return;
     }
@@ -186,22 +183,15 @@ function generateGhosts() {
     }
 
     for (let i = 0; i < GHOST_COUNT; i++) {
-        let color = [200, 50, 150];
-        if (Array.isArray(colorPalettes) && colorPalettes.length > 0) {
-            const palette = colorPalettes[floor(random(colorPalettes.length))];
-            color = palette[floor(random(palette.length))];
-        }
-
-        const anchor = GHOST_ANCHORS[i];
         ghosts.push({
-            x: anchor.x + random(-25, 25),
+            x: random(-220, 220),
             y: random(-120, -40),
-            z: anchor.z + random(-25, 25),
+            z: random(-220, 220),
             scale: random(0.35, 0.75),
             rotationX: random(-PI / 6, PI / 6),
             rotationY: random(0, TWO_PI),
             rotationZ: random(-PI / 6, PI / 6),
-            color: color,
+            color: pickPaletteColor(),
         });
     }
 }
@@ -262,9 +252,6 @@ async function generateTowers() {
     const tallRatio = 0.1;
 
     towers = [];
-    if (!Array.isArray(colorPalettes) || colorPalettes.length === 0) {
-        return;
-    }
     const numberOfTowers = 4;// random(15, 20);
     for (let i = 0; i < numberOfTowers; i++) {
         let shapes = [];
@@ -275,14 +262,12 @@ async function generateTowers() {
 
         for (let j = 0; j < numberOfShapes; j++) {
 
-            const palette = colorPalettes[floor(random(colorPalettes.length))];
-
             shapes.push({
                 x: random(-5, 5),
                 y: random(-20, -160),
                 z: random(-5, 5),
                 size: random(20, 80),
-                color: palette[j % palette.length],
+                color: pickPaletteColor(),
                 type: selectShapeType(),
                 hasTexture: random() < 0.5,
                 rotationX: random(0, PI/8),
@@ -311,7 +296,7 @@ function draw() {
     // Add point light for better illumination
     pointLight(255, 255, 255, 0, -100, 200);
 
-    orbitControl()
+    orbitControl(1, 1, ORBIT_ZOOM_SENSITIVITY);
 
     // angle += rotationSpeed;
     // rotateY(angle);
@@ -340,16 +325,16 @@ function draw() {
             rotateZ(shape.rotationZ);
 
             if (shape.color) {
-                fill(shape.color[0], shape.color[1], shape.color[2]);
+                fill(shape.color);
             } else {
-                fill(113, 112, 112);
+                fill('#717070');
             }
             noStroke();
             // Use ambient material for solid appearance
             if (shape.color) {
-                ambientMaterial(shape.color[0], shape.color[1], shape.color[2]);
+                ambientMaterial(shape.color);
             } else {
-                ambientMaterial(113, 112, 112);
+                ambientMaterial('#717070');
             }
 
             if (shape.hasTexture && noiseTexture) {
@@ -386,7 +371,7 @@ function drawGhosts() {
         rotateZ(ghost.rotationZ);
         scale(ghost.scale);
         noStroke();
-        emissiveMaterial(ghost.color[0], ghost.color[1], ghost.color[2]);
+        emissiveMaterial(ghost.color);
         model(model3D);
         pop();
     }
@@ -409,8 +394,8 @@ function drawBuildings() {
         rotateX(PI);
         scale(building.scale);
         noStroke();
-        fill(building.color[0], building.color[1], building.color[2]);
-        ambientMaterial(building.color[0], building.color[1], building.color[2]);
+        fill(building.color);
+        ambientMaterial(building.color);
         model(buildingModel);
         pop();
     }
@@ -428,7 +413,7 @@ function drawPlants() {
         rotateX(PI);
         scale(plant.scale);
         noStroke();
-        fill(plant.color[0], plant.color[1], plant.color[2]);
+        fill(plant.color);
         model(housePlantModel);
         pop();
     }
@@ -438,7 +423,7 @@ function buildFloor() {
     for (let block of floorBlocks) {
         push();
         translate(block.x, 0, block.z);
-        fill(block.color[0], block.color[1], block.color[2]);
+        fill(block.color);
         noStroke();
         ambientMaterial(13, 12, 12);
         box(block.width, block.height, block.depth);
