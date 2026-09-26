@@ -54,7 +54,7 @@
 
 /* Site header + nav tab colors */
 .site-header {
-  background: #fff;
+  background: #d8d5a8;
   position: relative;
   z-index: 2;
 }
@@ -77,7 +77,7 @@
 }
 
 .site-header .nav-pills .nav-item:nth-child(3) .nav-link {
-  --nav-tab-color: #e9c46a;
+  --nav-tab-color: #dba417;
 }
 
 .site-header .nav-pills .nav-item:nth-child(4) .nav-link {
