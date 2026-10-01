@@ -30,6 +30,11 @@
   background: rgba(255, 255, 255, 0.62);
 }
 
+/* Project pages: tint the moving background with the page's nav colour */
+.page-tint .home-bg::after {
+  background: color-mix(in srgb, var(--page-color) 30%, rgba(255, 255, 255, 0.7));
+}
+
 .page-home__content {
   position: relative;
   z-index: 1;
