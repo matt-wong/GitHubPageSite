@@ -372,3 +372,38 @@
   height: 1.1em;
   flex-shrink: 0;
 }
+
+/* Project pages: placeholder image + caption */
+.project-showcase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0 2rem;
+}
+
+.project-placeholder {
+  width: 50%;
+  height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bs-tertiary-bg);
+  border: 2px dashed var(--bs-border-color);
+  border-radius: 0.25rem;
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+}
+
+.project-caption {
+  width: 50%;
+  margin-top: 1rem;
+  text-align: center;
+  color: var(--bs-secondary-color);
+}
+
+@media (max-width: 576px) {
+  .project-placeholder,
+  .project-caption {
+    width: 100%;
+  }
+}
