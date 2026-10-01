@@ -311,17 +311,29 @@
   width: 100%;
 }
 
+/* Stage is sized to the 2:1 canvas: as wide as fits, but short enough to fit the
+   viewport below the header with some padding (--art-chrome). Sizing it up front
+   also keeps the loading overlay visible before p5 creates the canvas. */
 .art-page-section .canvas-stage {
+  --art-chrome: 9rem;
   position: relative;
-  display: inline-block;
-  max-width: 100%;
+  display: block;
+  width: min(1200px, 100%, (100vh - var(--art-chrome)) * 2);
+  width: min(1200px, 100%, (100dvh - var(--art-chrome)) * 2);
+  aspect-ratio: 2 / 1;
   line-height: 0;
+}
+
+/* Hide p5's default preload text; .canvas-loading replaces it */
+#p5_loading {
+  display: none;
 }
 
 .art-page-section .canvas-stage canvas {
   display: block;
-  max-width: 100%;
-  height: auto;
+  /* Override p5's inline 1200x600 size; p5 scales mouse input to match */
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .canvas-loading {
