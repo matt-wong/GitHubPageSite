@@ -412,3 +412,25 @@
     width: 100%;
   }
 }
+
+/* Header colour bars: track of stacked bars translated by nav-bars.js */
+.nav-bars {
+  position: relative;
+  width: 40px;
+  overflow: hidden;
+}
+
+.nav-bars__track {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-bars__track.is-animating {
+  transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.nav-bars__bar {
+  flex: 0 0 20%;
+}
